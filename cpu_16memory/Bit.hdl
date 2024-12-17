@@ -1,0 +1,12 @@
+//Nitish Malluru 932007196
+
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    // Put your code here:
+    Mux(a=tout, b=in, sel=load, out=mout);
+    DFF(in=mout, out=tout);
+    And(a=tout, b=true, out=out);
+}

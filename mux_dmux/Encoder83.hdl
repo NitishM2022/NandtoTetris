@@ -1,0 +1,16 @@
+//NAME AND UIN
+
+/**
+ * Encoder 
+ * out always contains the encoded id of the active input
+ * at any time only one bit in a[8] can be 1
+ * idle is 1 if all inputs are inactive, otherwise it is 0
+ */
+
+CHIP Encoder83 {
+    IN a[8];
+    OUT out[3], idle;
+
+    PARTS:
+    // Put your code here:
+}

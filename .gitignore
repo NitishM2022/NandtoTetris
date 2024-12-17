@@ -1,0 +1,10 @@
+.DS_Store
+.vscode
+*.dsym
+
+csadelaide-nand2tetris
+lab_notes_and_collateral
+LE*
+practice*
+SA*
+

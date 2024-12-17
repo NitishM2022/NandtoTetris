@@ -1,0 +1,42 @@
+// Nitish Malluru 932007196
+//Done
+
+
+CHIP Memory {
+	
+    IN  in[16],       // Data to be written into memory
+        load,      	  // Variable which decides whether to write to memory or not
+        address[16];  // Address for the register which we want access
+    
+    OUT out[16];      // Output from the memory
+
+    PARTS:
+    // Add your code here
+    // Data Memory has three sections: 32K RAM, 8K Screen, 1 Keyboard. Unit is 1 word (16 bits)
+
+    // Address RAM (32K) with 15 address bits [0..14]
+    And(a=address[15], b=load, out=add15);
+    DMux(in=load, sel=add15, a=loadRAM, b=loadOther);
+    RAM32K(in=in, load=loadRAM, address=address[0..14], out=ramout);
+
+    
+
+    // Address SCREEN(8K) with address[0..12] will be used to map the address to the screen
+    //check is addres[13..15] == 100
+    Not(in=address[14], out=not14);
+    Not(in=address[13], out=not13);
+    And(a=not14, b=not13, out=and1413);
+    And(a=address[15], b=add15, out=loadScreen);
+
+    DMux(in=load, sel=loadScreen, a=otherScreen, b=screenSuc);
+    Screen(in=in, load=screenSuc, address=address[0..12], out=screenout);
+
+
+    // Address KEYBOARD(1) 
+    Keyboard(out=keyOut);
+
+    // Combine all of them in a mux (Hint: Mux8Way16)
+    Mux8Way16(a=ramout, b=ramout, c=ramout, d=ramout, e=screenout, f=keyOut, g=keyOut, h=keyOut, sel=address[13..15], out=out);
+
+
+}

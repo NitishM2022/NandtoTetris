@@ -1,0 +1,47 @@
+// Nitish Malluru 932007196
+//done
+
+/**
+ * Counts the number of active(1) bits in a 16-bit input and outputs the result as a 5-bit
+ */
+
+CHIP ActiveCounter16 {
+    IN in[16];
+    OUT out[5];
+
+    PARTS:
+    // Put your code here:
+    Or(a=in[0], b=false, out=or0);
+    Or(a=in[1], b=false, out=or1);
+    Or(a=in[2], b=false, out=or2);
+    Or(a=in[3], b=false, out=or3);
+    Or(a=in[4], b=false, out=or4);
+    Or(a=in[5], b=false, out=or5);
+    Or(a=in[6], b=false, out=or6);
+    Or(a=in[7], b=false, out=or7);
+    Or(a=in[8], b=false, out=or8);
+    Or(a=in[9], b=false, out=or9);
+    Or(a=in[10], b=false, out=or10);
+    Or(a=in[11], b=false, out=or11);
+    Or(a=in[12], b=false, out=or12);
+    Or(a=in[13], b=false, out=or13);
+    Or(a=in[14], b=false, out=or14);
+    Or(a=in[15], b=false, out=or15);
+
+    Add5(a[0..4] = false, b[0] = or0, b[1..4] = false, out = out0);
+    Add5(a[0..4] = out0, b[0] = or1, b[1..4] = false, out = out1);
+    Add5(a[0..4] = out1, b[0] = or2, b[1..4] = false, out = out2);
+    Add5(a[0..4] = out2, b[0] = or3, b[1..4] = false, out = out3);
+    Add5(a[0..4] = out3, b[0] = or4, b[1..4] = false, out = out4);
+    Add5(a[0..4] = out4, b[0] = or5, b[1..4] = false, out = out5);
+    Add5(a[0..4] = out5, b[0] = or6, b[1..4] = false, out = out6);
+    Add5(a[0..4] = out6, b[0] = or7, b[1..4] = false, out = out7);
+    Add5(a[0..4] = out7, b[0] = or8, b[1..4] = false, out = out8);
+    Add5(a[0..4] = out8, b[0] = or9, b[1..4] = false, out = out9);
+    Add5(a[0..4] = out9, b[0] = or10, b[1..4] = false, out = out10);
+    Add5(a[0..4] = out10, b[0] = or11, b[1..4] = false, out = out11);
+    Add5(a[0..4] = out11, b[0] = or12, b[1..4] = false, out = out12);
+    Add5(a[0..4] = out12, b[0] = or13, b[1..4] = false, out = out13);
+    Add5(a[0..4] = out13, b[0] = or14, b[1..4] = false, out = out14);
+    Add5(a[0..4] = out14, b[0] = or15, b[1..4] = false, out = out);
+}

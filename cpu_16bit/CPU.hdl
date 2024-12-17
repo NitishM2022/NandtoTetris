@@ -1,0 +1,134 @@
+// Nitish Malluru 932007196
+
+CHIP CPU{
+
+    IN  fromM[16],          // M value input  (M = contents of RAM[Address])
+        In[16],    	        // Instruction for execution
+        Reset;              // Signals whether to re-start the current
+                            // program (Reset==1) or continue executing
+                            // the current program (Reset==0).
+
+    OUT toM[16],            // M value output
+        writeM,             // Write to M 
+        addressM[16],       // Address in data memory (of M)
+        PCOut[16];          // address of next instruction
+
+    PARTS:
+    //c is selection for DMUX based on In an logic
+    // Instruction bits along with the inverted versions
+    //determine if aluOperation
+    Not(in=In[15], out=aluIn);
+
+    //determine if read
+    Not(in=In[15], out=nin15);
+    Or(a=nin15, b=In[14], out=nin1514);
+    Or(a=In[13], b=In[12], out=in1312);
+    Or(a=nin1514, b=in1312, out=nreadIn);
+    Not(in=nreadIn, out=readIn); // 1 if read instruction 0 if not read instruction
+
+    //if alu or read instruction we can load
+    Or(a=readIn, b=aluIn, out=load0);
+    Or(a=load0, b=inpIn, out=load);
+
+    // 1. Register control //
+    //in
+    //DMux8Way(in=value, sel=In[9..11], a=ri0, b=ri1, c=ri2, d=ri3, e=ri4, f=ri5, g=ri6, h=ri7);
+    //load
+    DMux8Way(in=load, sel=In[9..11], a=rl0, b=rl1, c=rl2, d=rl3, e=rl4, f=rl5, g=rl6, h=rl7);
+    Register(in=value, load=rl0, out=r0);
+    Register(in=value, load=rl1, out=r1);
+    Register(in=value, load=rl2, out=r2);
+    Register(in=value, load=rl3, out=r3);
+    Register(in=value, load=rl4, out=r4);
+    Register(in=value, load=rl5, out=r5);
+    Register(in=value, load=rl6, out=r6);
+    Register(in=value, load=rl7, out=r7);
+
+    //if readIn is true we can load value to register fromM otherwise we load value from ALU
+    //also must check to see if INP is command
+    And(a=In[15], b=In[14], out=inp0);
+    And(a=In[13], b=nin12, out=inp1);
+    And(a=inp0, b=inp1, out=inpIn);
+
+    Mux16(a=aluOut, b=fromM, sel=readIn, out=value0);
+    Mux16(a=value0, b=fromM, sel=inpIn, out=value);
+    // Register control //
+
+    // 2. ALU  //
+    //Rx
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=In[6..8], out=rx, out=toM, out[0..7]=branch0, out[8..15]=branch1);
+    //Ry
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=In[3..5], out=ry);
+
+    //must determine if we are using ry or a constant
+    //0001 or 0011
+    Not(in=In[14], out=nin14);
+    And(a=nin15, b=nin14, out=nnin1514);
+    And(a=nnin1514, b=In[12], out=constant);//1 if I use constant, 0 if I use ry
+
+    Mux16(a=ry, b[6..15]=false, b[0..5]=In[0..5], sel=constant, out=ryf);//ryf final value between constant and 
+    ALU(AluOp=In[12..15], x=rx, y=ryf, AluOut=aluOut);
+    // ALU //
+
+
+    // 3. Prepare the Memory Address addressM (in case of READ and Write), Memory Data toM (I did this in ry mux) (in case of Write or OUT)
+    //find out if there is a Write Operation 1010
+    Not(in=In[12], out=nin12);
+    And(a=In[15], b=nin14, out=w0);
+    And(a=In[13], b=nin12, out=w1);
+    And(a=w0, b=w1, out=writeOut);//1 if write operation 0 otherwise
+
+    //find out if there is a Screen Out Operation 1100
+    And(a=In[15], b=In[14], out=o0);
+    Not(in=In[13], out=nin13);
+    And(a=nin13, b=nin12, out=o1);
+    And(a=o0, b=o1, out=screenOut);//1 if screen out operation
+    
+    // addressM //
+    //if read want to get value of mem[rx], if write want to mem[dest]=rx
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=In[9..11], out=dest);
+    Mux16(a=dest, b=rx, sel=readIn, out=addressM0);
+    Mux16(a=addressM0, b[15]=true, b[13]=true, sel=inpIn, out=addressM);
+    // addressM //
+
+
+
+    // 4. Generate the writeM signal (memory write for RAM or Screen)
+    // writeM is true if it is a Memory Write operation or a Screen OUT operation
+    // writeM //
+    Or(a=writeOut, b=screenOut, out=writeM);
+    // writeM //
+    
+
+    
+    // 5. We load the PC with new value if there is a branch
+    // Branch can be conditional or unconditional
+    // Unconditional => In[15..12] = 1011
+    // Conditional => In[15..12] = 1001 && In[8..6]==000
+    // PC //
+    //determine if jump instruction
+    And(a=In[15], b=nin14, out=j0);
+    And(a=In[13], b=In[12], out=j1);
+    And(a=j0, b=j1, out=jumpIn);
+
+    //determine if branch instrucition
+    And(a=In[15], b=nin14, out=b0);
+    And(a=nin13, b=In[12], out=b1);
+    And(a=b0, b=b1, out=branchIn);
+
+    //check if succesful branch
+    // Or(a=In[8], b=In[7], out=s0);
+    // Or(a=s0, b=In[6], out=nsucc);
+    Or8Way(in=branch0, out=nsucc0);
+    Or8Way(in=branch1, out=nsucc1);
+    Or(a=nsucc0, b=nsucc1, out=nsucc);
+    Not(in=nsucc, out=succ);
+
+    And(a=branchIn, b=succ, out=branchInSucc);
+    Or(a=jumpIn, b=branchInSucc, out=loadJump);//if jump or conditional branch is succesful we can load new value into pc
+
+    
+    PC(in=dest, load=loadJump, inc=true, reset=Reset, out=PCOut);
+
+    // PC //
+} 
